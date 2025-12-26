@@ -1,5 +1,7 @@
+// src/pages/Login.jsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { loginAdmin } from '../api/authApi'; // service adapté avec Axios
 
 function Login({ setIsAuthenticated }) {
   const [email, setEmail] = useState('');
@@ -15,30 +17,20 @@ function Login({ setIsAuthenticated }) {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:4000/auth'); // <-- json-server
-      const data = await res.json();
+      const admin = await loginAdmin(email, password); // appel service Axios
 
-      const admin = data.find(
-        a =>
-          a.email === email.trim() &&
-          a.password === password.trim()
-      );
-
-      if (!admin) {
-        throw new Error('Accès réservé à l’administrateur');
-      }
-
-      localStorage.setItem('isAdminAuth', 'true');
+      // Stocker les infos de session localement
       localStorage.setItem('adminEmail', admin.email);
+      localStorage.setItem('adminName', admin.name);
+      localStorage.setItem('isAdminAuth', 'true');
 
-      if (setIsAuthenticated) {
-        setIsAuthenticated(true);
-      }
+      if (setIsAuthenticated) setIsAuthenticated(true);
 
+      // Redirection vers l'espace admin
       navigate('/admin', { replace: true });
-
     } catch (err) {
-      setError(err.message);
+      // Affichage de l'erreur
+      setError(err.message || 'Erreur lors de la connexion');
     } finally {
       setLoading(false);
     }
@@ -64,7 +56,7 @@ function Login({ setIsAuthenticated }) {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={e => setEmail(e.target.value)}
               required
             />
           </div>
@@ -74,7 +66,7 @@ function Login({ setIsAuthenticated }) {
             <input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={e => setPassword(e.target.value)}
               required
             />
           </div>

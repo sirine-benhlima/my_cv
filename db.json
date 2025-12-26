@@ -4,7 +4,8 @@
       "id": 1,
       "email": "admin@cv.com",
       "password": "admin123",
-      "role": "ADMIN"
+      "role": "ADMIN",
+      "name": "Administrateur"
     }
   ]
 }
