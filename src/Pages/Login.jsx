@@ -1,18 +1,13 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-
-const API_URL = import.meta.env.VITE_API_URL;
-console.log("API_URL =", API_URL);
+import { useNavigate } from 'react-router-dom';
 
 function Login({ setIsAuthenticated }) {
-  const [email, setEmail] = useState('eve.holt@reqres.in');
-  const [password, setPassword] = useState('cityslicka');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
-  const location = useLocation();
-  const from = location.state?.from?.pathname || '/admin';
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -20,45 +15,30 @@ function Login({ setIsAuthenticated }) {
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_URL}/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          password: password.trim(),
-        }),
-      });
-
+      const res = await fetch('http://localhost:4000/auth'); // <-- json-server
       const data = await res.json();
-      console.log('API Response:', data);
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Erreur de connexion');
+      const admin = data.find(
+        a =>
+          a.email === email.trim() &&
+          a.password === password.trim()
+      );
+
+      if (!admin) {
+        throw new Error('Accès réservé à l’administrateur');
       }
 
-      // Sauvegarde du token renvoyé par l'API
-      const token = data.token;
-      localStorage.setItem('authToken', token);
+      localStorage.setItem('isAdminAuth', 'true');
+      localStorage.setItem('adminEmail', admin.email);
 
-      if (setIsAuthenticated) setIsAuthenticated(true);
+      if (setIsAuthenticated) {
+        setIsAuthenticated(true);
+      }
 
-      navigate(from, { replace: true });
+      navigate('/admin', { replace: true });
 
     } catch (err) {
-      console.warn('API call failed:', err.message);
-
-      // Fallback uniquement pour les identifiants par défaut
-      if (email === 'eve.holt@reqres.in' && password === 'cityslicka') {
-        const simulatedToken = 'simulated-token-' + Date.now();
-        localStorage.setItem('authToken', simulatedToken);
-        if (setIsAuthenticated) setIsAuthenticated(true);
-        navigate(from, { replace: true });
-      } else {
-        setError('Identifiants incorrects ou problème de connexion');
-      }
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -67,14 +47,14 @@ function Login({ setIsAuthenticated }) {
   return (
     <div className="login-page">
       <div className="login-card">
-        <h1 className="login-title">Connexion</h1>
+        <h1 className="login-title">Connexion Administrateur</h1>
         <p className="login-subtitle">
-          Connectez-vous pour accéder à l'espace administration.
+          Accès réservé à l’administrateur
         </p>
 
         {error && (
           <div className="login-error">
-            <strong>Erreur:</strong> {error}
+            <strong>Erreur :</strong> {error}
           </div>
         )}
 
